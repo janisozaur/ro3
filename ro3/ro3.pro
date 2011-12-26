@@ -14,7 +14,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    GaussianFilter.cpp
+	GaussianFilter.cpp \
+	EdgeDetector.cpp
 
 HEADERS += \
-    GaussianFilter.h
+	GaussianFilter.h \
+	EdgeDetector.h
