@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core
-
-QT       -= gui
+QT       += core gui
 
 TARGET = ro3
 CONFIG   += console
@@ -15,4 +13,8 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    GaussianFilter.cpp
+
+HEADERS += \
+    GaussianFilter.h
