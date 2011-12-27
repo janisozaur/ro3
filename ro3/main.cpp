@@ -1,9 +1,11 @@
 #include "GaussianFilter.h"
 #include "EdgeDetector.h"
+#include "EllipseExtractor.h"
 
 #include <QtCore/QCoreApplication>
 #include <QImage>
 #include <QStringList>
+#include <QElapsedTimer>
 
 #include <QDebug>
 
@@ -21,5 +23,11 @@ int main(int argc, char *argv[])
 	EdgeDetector ed;
 	QImage edges = ed.detect(img);
 	edges.save(a.arguments().at(1) + "_edges.png");
+	EllipseExtractor ee;
+	QElapsedTimer et;
+	et.start();
+	ee.extract(edges);
+	const int msecs = et.elapsed();
+	qDebug() << "overall ellipse extraction took" << msecs << "msecs";
 	return 0;
 }

@@ -15,8 +15,10 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
 	GaussianFilter.cpp \
-	EdgeDetector.cpp
+	EdgeDetector.cpp \
+	EllipseExtractor.cpp
 
 HEADERS += \
 	GaussianFilter.h \
-	EdgeDetector.h
+	EdgeDetector.h \
+	EllipseExtractor.h
