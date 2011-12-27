@@ -18,6 +18,10 @@ int main(int argc, char *argv[])
 	qDebug() << "stddev for size" << size << "equals" << stdDev;
 	GaussianFilter gf(size, stdDev);
 	QImage img(a.arguments().at(1));
+	Q_ASSERT_X(!img.isNull(), "loading image", "failed to load image");
+	Q_ASSERT_X(img.format() == QImage::Format_Indexed8, "loading image", "image has more than 1 byte per channel");
+	Q_ASSERT_X(!img.hasAlphaChannel(), "loading image", "image has alpha channel");
+	Q_ASSERT_X(img.isGrayscale(), "loading image", "image is not grayscale");
 	QImage result = gf.gaussianBlur(img);
 	result.save(a.arguments().at(1) + "_gaussian.png");
 	EdgeDetector ed;
