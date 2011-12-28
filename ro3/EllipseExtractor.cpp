@@ -18,6 +18,8 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 	Q_ASSERT(image.format() == QImage::Format_Indexed8);
 	const int minDist = 35;
 	const int twoMinDist = 2 * minDist;
+	const int minDistSq = minDist * minDist;
+	const int twoMinDistSq = twoMinDist * twoMinDist;
 	const int minThresh = 25;
 	const int minVotes = 30;
 	QList<Ellipse> result;
@@ -39,24 +41,25 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 	int count = 0;
 	QAtomicInt progress = 0;
 	// (3)
-#pragma omp parallel for
-	for (int i = 0; i < points.size(); i++) {
+	for (int i = 0; i < pointsCount; i++) {
 		QElapsedTimer et;
 		et.start();
 		const QPoint &p1 = points.at(i);
 		const int x1 = p1.x();
 		const int y1 = p1.y();
 		// (4)
-		for (int j = i + 1; j < points.size(); j++) {
+#pragma omp parallel for schedule(guided)
+		for (int j = i + 1; j < pointsCount; j++) {
 			const QPoint &p2 = points.at(j);
 			const int x2 = p2.x();
 			const int y2 = p2.y();
 			const int dy = y2 - y1;
 			const int dx = x2 - x1;
-			const qreal dist = qSqrt(dx * dx + dy * dy);
-			if (dist < twoMinDist) {
+			const int distSq = dx * dx + dy * dy;
+			if (distSq < twoMinDistSq) {
 				continue;
 			}
+			const qreal dist = qSqrt(distSq);
 			// (5)
 			const qreal x0 = qreal(x1 + x2) / 2;
 			const qreal y0 = qreal(y1 + y2) / 2;
@@ -65,7 +68,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 			const qreal orientation = atan2(qreal(dy), qreal(dx));
 			QHash<long long, int> votes;
 			// (6)
-			for (int k = 0; k < points.size(); k++) {
+			for (int k = 0; k < pointsCount; k++) {
 				if (Q_UNLIKELY(k == i || k == j)) {
 					continue;
 				}
@@ -75,15 +78,15 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 				const int dyi = y0 - y;
 				const int dxi = x0 - x;
 				const qreal dSq = dxi * dxi + dyi * dyi;
-				const qreal d = qSqrt(dSq);
 				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				// NOTE: this here might also include "d > major"
 				// condition, for we don't want any point that is
 				// further than the tip of major axis
 				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				if (d < minDist) {
+				if (dSq < minDistSq) {
 					continue;
 				}
+				const qreal d = qSqrt(dSq);
 				// (7)
 				const int fy = y2 - y;
 				const int fx = x2 - x;
@@ -121,7 +124,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 			rPtr[int(y0 * w + x0)].fetchAndAddRelaxed(1);
 		}
 		const int msecs = et.elapsed();
-		const int progVal = progress.fetchAndAddAcquire(1) + 1;
+		const int progVal = progress.fetchAndAddRelaxed(1) + 1;
 		qDebug() << "msecs:" << msecs << ", " << qreal(progVal) / qreal(pointsCount) * 100 << "%";
 	}
 	int maxR = 0;
