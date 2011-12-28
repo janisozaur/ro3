@@ -12,6 +12,9 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
+QMAKE_CXXFLAGS += -std=c++0x -fopenmp
+
+LIBS += -lgomp
 
 SOURCES += main.cpp \
 	GaussianFilter.cpp \
