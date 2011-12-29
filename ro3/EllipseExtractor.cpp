@@ -16,12 +16,19 @@ EllipseExtractor::EllipseExtractor()
 QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 {
 	Q_ASSERT(image.format() == QImage::Format_Indexed8);
-	const int minDist = 35;
-	const int twoMinDist = 2 * minDist;
-	const int minDistSq = minDist * minDist;
-	const int twoMinDistSq = twoMinDist * twoMinDist;
-	const int minThresh = 25;
-	const int minVotes = 30;
+	const int minMajor = 20;
+	const int maxMajor = 50;
+	const int minMinor = 10;
+	const int minThresh = 31;
+	const int minVotes = 20;
+	const int tag = qrand();
+	qDebug() << "minMajor << maxMajor << minMinor << minThresh << minVotes << tag"
+			 <<  minMajor << maxMajor << minMinor << minThresh << minVotes << tag;
+	const int minMinorSq = minMinor * minMinor;
+	const int twoMinMajor = 2 * minMajor;
+	const int minMajorSq = minMajor * minMajor;
+	const int twoMinMajorSq = twoMinMajor * twoMinMajor;
+	const int twoMaxMajorSq = maxMajor * maxMajor * 4;
 	QList<Ellipse> result;
 	const int w = image.width();
 	const int h = image.height();
@@ -35,12 +42,14 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 		}
 	}
 	const int pointsCount = points.size();
+	qDebug() << "has" << pointsCount << "points";
 	const int pixelCount = w * h;
 	QVector<QAtomicInt> r(pixelCount);
 	QAtomicInt *rPtr = r.data();
 	int count = 0;
 	QAtomicInt progress = 0;
 	// (3)
+#pragma omp parallel for schedule(guided)
 	for (int i = 0; i < pointsCount; i++) {
 		QElapsedTimer et;
 		et.start();
@@ -48,7 +57,6 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 		const int x1 = p1.x();
 		const int y1 = p1.y();
 		// (4)
-#pragma omp parallel for schedule(guided)
 		for (int j = i + 1; j < pointsCount; j++) {
 			const QPoint &p2 = points.at(j);
 			const int x2 = p2.x();
@@ -56,7 +64,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 			const int dy = y2 - y1;
 			const int dx = x2 - x1;
 			const int distSq = dx * dx + dy * dy;
-			if (distSq < twoMinDistSq) {
+			if (Q_LIKELY(distSq < twoMinMajorSq || distSq > twoMaxMajorSq)) {
 				continue;
 			}
 			const qreal dist = qSqrt(distSq);
@@ -83,7 +91,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 				// condition, for we don't want any point that is
 				// further than the tip of major axis
 				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				if (dSq < minDistSq) {
+				if (Q_LIKELY(dSq < minMajorSq || dSq > twoMaxMajorSq)) {
 					continue;
 				}
 				const qreal d = qSqrt(dSq);
@@ -99,7 +107,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 				// (8)
 				const qreal minorSq = nom / den;
 				long long iMinorSq = qMax(minorSq, qreal(0));
-				if (iMinorSq > 0) {
+				if (iMinorSq >= minMinorSq) {
 					votes[iMinorSq]++;
 				}
 			}
@@ -144,6 +152,6 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 			rmap.setPixel(x, y, qRgb(c, c, c));
 		}
 	}
-	rmap.save("vote_map.png");
+	rmap.save("vote_map_" + QString::number(tag) + ".png");
 	return result;
 }
