@@ -19,9 +19,15 @@ LIBS += -lgomp
 SOURCES += main.cpp \
 	GaussianFilter.cpp \
 	EdgeDetector.cpp \
-	EllipseExtractor.cpp
+	EllipseExtractor.cpp \
+    DilationFilter.cpp \
+    ThresholdFilter.cpp \
+    BinaryOpFilter.cpp
 
 HEADERS += \
 	GaussianFilter.h \
 	EdgeDetector.h \
-	EllipseExtractor.h
+	EllipseExtractor.h \
+    DilationFilter.h \
+    ThresholdFilter.h \
+    BinaryOpFilter.h
