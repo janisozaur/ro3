@@ -190,9 +190,9 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image, const QImage &org,
 							rmap.setPixel(x1, y1, qRgb(0, 0, 0));
 						}
 					}
+					Ellipse e(QPointF(x, y), 0, 0, 0);
+					result.append(e);
 				}
-				Ellipse e(QPointF(x, y), 0, 0, 0);
-				result.append(e);
 			}
 		}
 	}
