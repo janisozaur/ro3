@@ -13,7 +13,7 @@ EllipseExtractor::EllipseExtractor()
 {
 }
 
-QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
+QList<Ellipse> EllipseExtractor::extract(const QImage &image, const QImage &org, const int &lower, const int &upper) const
 {
 	Q_ASSERT(image.format() == QImage::Format_Indexed8);
 	const int minMajor = 20;
@@ -127,7 +127,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 						 << "a" << major << qSqrt(votes.keys().at(maxVoteIdx))
 						 << "o" << orientation << "cnt" << count;
 			} else {
-				qDebug() << "boohoo, no ellipse for me... max vote:" << maxVote << x0 << y0 << votes.keys().at(maxVoteIdx);
+				//qDebug() << "boohoo, no ellipse for me... max vote:" << maxVote << x0 << y0 << "a" << votes.keys().at(maxVoteIdx) << major;
 			}
 			rPtr[int(y0 * w + x0)].fetchAndAddRelaxed(1);
 		}
@@ -153,5 +153,48 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image) const
 		}
 	}
 	rmap.save("vote_map_" + QString::number(tag) + ".png");
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			if (qGray(rmap.pixel(x, y)) > 127) {
+				QVector<int> histogram(256);
+				{
+					const int size = 15;
+					const int y1start = qMax(0, y - size);
+					const int y1end = qMin(y + size, h);
+					const int x1start = qMax(0, x - size);
+					const int x1end = qMin(x + size, w);
+					for (int y1 = y1start; y1 < y1end; y1++) {
+						for (int x1 = x1start; x1 < x1end; x1++) {
+							const int g = qGray(org.pixel(x1, y1));
+							histogram[g]++;
+						}
+					}
+				}
+				int sum = 0;
+				int sum2 = 0;
+				for (int i = 0; i < histogram.size(); i++) {
+					sum += histogram.at(i);
+					if (qBound(lower, i, upper) == i) {
+						sum2 += histogram.at(i);
+					}
+				}
+				if (((sum2 * 100) / sum) > 70) {
+					qDebug() << "ellipse detected!";
+					const int size = minMajor;
+					const int y1start = qMax(0, y - size);
+					const int y1end = qMin(y + size, h);
+					const int x1start = qMax(0, x - size);
+					const int x1end = qMin(x + size, w);
+					for (int y1 = y1start; y1 < y1end; y1++) {
+						for (int x1 = x1start; x1 < x1end; x1++) {
+							rmap.setPixel(x1, y1, qRgb(0, 0, 0));
+						}
+					}
+				}
+				Ellipse e(QPointF(x, y), 0, 0, 0);
+				result.append(e);
+			}
+		}
+	}
 	return result;
 }

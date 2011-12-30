@@ -13,6 +13,22 @@
 
 #include <QDebug>
 
+void drawResults(QImage &result, const QList<Ellipse> &ellipses, const int dotSize, const QRgb color)
+{
+	for (int i = 0; i < ellipses.size(); i++) {
+		const QPoint c = ellipses.at(i).center().toPoint();
+		const int y1start = qMax(0, c.y() - dotSize);
+		const int y1end = qMin(c.y() + dotSize, result.height());
+		const int x1start = qMax(0, c.x() - dotSize);
+		const int x1end = qMin(c.x() + dotSize, result.width());
+		for (int y = y1start; y < y1end; y++) {
+			for (int x = x1start; x < x1end; x++) {
+				result.setPixel(x, y, color);
+			}
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
@@ -57,14 +73,20 @@ int main(int argc, char *argv[])
 	greenEdgesThreshedAnded.save(a.arguments().at(1) + "_greenEdgesThreshedAnded.png");
 #endif
 	EllipseExtractor ee;
+	QList<Ellipse> reds, greens;
 	QElapsedTimer et;
 	et.start();
-	ee.extract(edgesRedThreshed);
+	reds = ee.extract(edgesRedThreshed, img, 0, 100);
 	const int msecsRed = et.elapsed();
 	qDebug() << "overall red extraction took" << msecsRed << "msecs";
 	qsrand(QDateTime::currentDateTime().toTime_t());
-	ee.extract(greenEdgesThreshedAnded);
+	greens = ee.extract(greenEdgesThreshedAnded, img, 100, 200);
 	const int msecsGreen = et.elapsed();
 	qDebug() << "overall green extraction took" << msecsGreen << "msecs";
+	QImage result(img.size(), QImage::Format_ARGB32_Premultiplied);
+	const int dotSize = 10;
+	drawResults(result, reds, dotSize, qRgb(255, 0, 0));
+	drawResults(result, greens, dotSize, qRgb(0, 255, 0));
+	result.save(a.arguments().at(1) + "_result.png");
 	return 0;
 }
