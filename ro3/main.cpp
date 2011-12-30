@@ -39,10 +39,29 @@ int main(int argc, char *argv[])
 	qDebug() << "stddev for size" << size << "equals" << stdDev;
 	GaussianFilter gf(size, stdDev);
 	QImage img(a.arguments().at(1));
-	Q_ASSERT_X(!img.isNull(), "loading image", "failed to load image");
-	Q_ASSERT_X(img.format() == QImage::Format_Indexed8, "loading image", "image has more than 1 byte per channel");
-	Q_ASSERT_X(!img.hasAlphaChannel(), "loading image", "image has alpha channel");
-	Q_ASSERT_X(img.isGrayscale(), "loading image", "image is not grayscale");
+	if (img.isNull()) {
+		qCritical() << "failed to load image";
+		return -1;
+	}
+	if (!img.isGrayscale() || img.format() != QImage::Format_Indexed8) {
+		QImage convert(img.size(), QImage::Format_Indexed8);
+		QVector<QRgb> colortab;
+		colortab.reserve(256);
+		for (int i = 0; i < 256; i++) {
+			colortab.append(qRgb(i, i, i));
+		}
+		convert.setColorTable(colortab);
+		for (int y = 0; y < img.height(); y++) {
+			for (int x = 0; x < img.width(); x++) {
+				convert.setPixel(x, y, qGray(img.pixel(x, y)));
+			}
+		}
+		img = convert;
+	}
+	if (img.hasAlphaChannel()) {
+		qCritical() << "for some reason the image has alpha channel, aborting";
+		return -1;
+	}
 	QImage gaussed = gf.gaussianBlur(img);
 	ThresholdFilter tf(120);
 	EdgeDetector ed;
