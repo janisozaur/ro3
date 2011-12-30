@@ -13,6 +13,8 @@
 
 #include <QDebug>
 
+#define SAVE_IMAGES
+
 void drawResults(QImage &result, const QList<Ellipse> &ellipses, const int dotSize, const QRgb color)
 {
 	for (int i = 0; i < ellipses.size(); i++) {
