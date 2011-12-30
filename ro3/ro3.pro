@@ -20,6 +20,7 @@ SOURCES += main.cpp \
 	GaussianFilter.cpp \
 	EdgeDetector.cpp \
 	EllipseExtractor.cpp \
+	Ellipse.cpp \
     DilationFilter.cpp \
     ThresholdFilter.cpp \
     BinaryOpFilter.cpp
@@ -28,6 +29,7 @@ HEADERS += \
 	GaussianFilter.h \
 	EdgeDetector.h \
 	EllipseExtractor.h \
+	Ellipse.h \
     DilationFilter.h \
     ThresholdFilter.h \
     BinaryOpFilter.h
