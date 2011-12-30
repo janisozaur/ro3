@@ -49,7 +49,7 @@ QList<Ellipse> EllipseExtractor::extract(const QImage &image, const QImage &org,
 	int count = 0;
 	QAtomicInt progress = 0;
 	// (3)
-#pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(dynamic, 15)
 	for (int i = 0; i < pointsCount; i++) {
 		QElapsedTimer et;
 		et.start();
